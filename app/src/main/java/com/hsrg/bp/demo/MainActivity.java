@@ -38,8 +38,10 @@ public class MainActivity extends AppCompatActivity
 
     private boolean mScanning;
     private Handler mHandler;
+
     private BluetoothLeService mBluetoothLeService;
     private String mDeviceAddress;
+    private boolean result;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -140,7 +142,6 @@ public class MainActivity extends AppCompatActivity
 
     //搜索时长
     private static final long SCAN_PERIOD = 5000;
-
     /**
      * 搜索设备
      */
@@ -193,20 +194,23 @@ public class MainActivity extends AppCompatActivity
     // Code to manage Service lifecycle.
     private final ServiceConnection mServiceConnection = new ServiceConnection()
     {
-
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder service) {
             mBluetoothLeService = ((BluetoothLeService.LocalBinder) service).getService();
+            Log.e("zbf", "初始化蓝牙服务");
             if (!mBluetoothLeService.initialize())
             {
-                Log.e("zbf", "Unable to initialize Bluetooth");
+                Log.e("zbf", "无法初始化蓝牙");
                 finish();
             }
             // Automatically connects to the device upon successful start-up
             // initialization.
-            mBluetoothLeService.connect(mDeviceAddress);
+//            mBluetoothLeService.connect(mDeviceAddress);
+            result = mBluetoothLeService.connect(mDeviceAddress);
+            //开始搜索，搜索到开始连接
+            scanLeDevice(true);
         }
-
+        //断开连接
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
             mBluetoothLeService = null;
