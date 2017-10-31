@@ -27,10 +27,8 @@ import java.util.UUID;
  * 用于管理连接的服务和数据与服务器通信托管在关贸总协定
  * 给蓝牙LE装置。
  */
-@SuppressLint("Registered")
 public class BluetoothLeService extends Service
 {
-    //    private final static String TAG = BluetoothLeService.class.getSimpleName();
     private final static String TAG = "zbf_bpm_service";
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
@@ -44,38 +42,25 @@ public class BluetoothLeService extends Service
     private static final int STATE_CONNECTING = 1;
     private static final int STATE_CONNECTED = 2;
 
-    public final static String ACTION_GATT_CONNECTED =
-            "com.example.bluetooth.le.ACTION_GATT_CONNECTED";
-    public final static String ACTION_GATT_DISCONNECTED =
-            "com.example.bluetooth.le.ACTION_GATT_DISCONNECTED";
-    public final static String ACTION_GATT_SERVICES_DISCOVERED =
-            "com.example.bluetooth.le.ACTION_GATT_SERVICES_DISCOVERED";
-    public final static String ACTION_DATA_AVAILABLE =
-            "com.example.bluetooth.le.ACTION_DATA_AVAILABLE";
-    public final static String EXTRA_DATA =
-            "com.example.bluetooth.le.EXTRA_DATA";
-    public static final UUID SERVIE_UUID = UUID
-            .fromString("00001801-0000-1000-8000-00805f9b34fb");
+    public final static String ACTION_GATT_CONNECTED = "com.example.bluetooth.le.ACTION_GATT_CONNECTED";
+    public final static String ACTION_GATT_DISCONNECTED = "com.example.bluetooth.le.ACTION_GATT_DISCONNECTED";
+    public final static String ACTION_GATT_SERVICES_DISCOVERED = "com.example.bluetooth.le.ACTION_GATT_SERVICES_DISCOVERED";
+    public final static String ACTION_DATA_AVAILABLE = "com.example.bluetooth.le.ACTION_DATA_AVAILABLE";
+    public final static String EXTRA_DATA = "com.example.bluetooth.le.EXTRA_DATA";
+    public static final UUID SERVIE_UUID = UUID.fromString("00001801-0000-1000-8000-00805f9b34fb");
 
 
-    public final static String ACTION_DATA_RSSI =
-            "com.example.bluetooth.le.ACTION_DATA_RSSI";
+    public final static String ACTION_DATA_RSSI = "com.example.bluetooth.le.ACTION_DATA_RSSI";
 
-    public final static String ACTION_RSSI =
-            "com.example.bluetooth.le.ACTION_RSSI";
+    public final static String ACTION_RSSI = "com.example.bluetooth.le.ACTION_RSSI";
 
-    public static final UUID RED_LIGHT_CONTROL_UUID = UUID
-            .fromString("bef8d6c9-9c21-4c9e-b632-bd58c1009f9f");
-    public static final UUID RED_LIGHT_CONTROL_UUID_TWO = UUID
-            .fromString("bef8d6c9-9c21-4c9e-b632-bd58c1009f9f");
-    public final static UUID UUID_HEART_RATE_MEASUREMENT = UUID
-            .fromString(SampleGattAttributes.HEART_RATE_MEASUREMENT);
+    public static final UUID RED_LIGHT_CONTROL_UUID = UUID.fromString("bef8d6c9-9c21-4c9e-b632-bd58c1009f9f");
+    public static final UUID RED_LIGHT_CONTROL_UUID_TWO = UUID.fromString("bef8d6c9-9c21-4c9e-b632-bd58c1009f9f");
+    public final static UUID UUID_HEART_RATE_MEASUREMENT = UUID.fromString(SampleGattAttributes.HEART_RATE_MEASUREMENT);
 
     // 连接的变化和服务发现。
-    @SuppressLint("NewApi")
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback()
     {
-        @SuppressLint("NewApi")
         @Override
         //连接状况改变（API中的方法）
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState)
@@ -143,10 +128,10 @@ public class BluetoothLeService extends Service
              * 格式UInt8
              */
             byte[] data = characteristic.getValue();
-            for (int i = 0; i < data.length; i++)
-            {
-                Log.e("zbf", "data" + i + " " + data[i]);
-            }
+//            for (int i = 0; i < data.length; i++)
+//            {
+//                Log.e("zbf", "data" + i + " " + data[i]);
+//            }
             //			intent.putExtra("", value)
 
             //对读取的数据进行判断
@@ -255,7 +240,6 @@ public class BluetoothLeService extends Service
         String str2 = new String(data);
         //		Log.e(TAG, "返回读出的值:"+characteristic.getValue().toString());
         Log.e(TAG, "返回读出的值data:" + Arrays.toString(data));
-        Log.e(TAG, "返回读出的值data2:" + str2);
 
         intent.putExtra(EXTRA_DATA, String.valueOf(str2));
         sendBroadcast(intent);
@@ -515,10 +499,6 @@ public class BluetoothLeService extends Service
 
     /**
      * 发送数据
-     *
-     * @param characteristic
-     * @param b
-     * @return
      */
     public Boolean write(BluetoothGattCharacteristic characteristic, byte[] b)
     {
@@ -544,8 +524,6 @@ public class BluetoothLeService extends Service
 
     /**
      * 获取信号强度
-     *
-     * @return
      */
     public boolean readrssi()
     {

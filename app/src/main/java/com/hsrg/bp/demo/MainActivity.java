@@ -1,15 +1,14 @@
 package com.hsrg.bp.demo;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.location.LocationManager;
 import android.os.Handler;
@@ -23,10 +22,11 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+
 import permissions.dispatcher.NeedsPermission;
-import permissions.dispatcher.OnShowRationale;
-import permissions.dispatcher.PermissionRequest;
 import permissions.dispatcher.RuntimePermissions;
+
+import static com.hsrg.bp.demo.BleBroadcastReceiver.mNotifyCharacteristic;
 
 @RuntimePermissions
 public class MainActivity extends AppCompatActivity
@@ -39,9 +39,12 @@ public class MainActivity extends AppCompatActivity
     private boolean mScanning;
     private Handler mHandler;
 
-    private BluetoothLeService mBluetoothLeService;
+    public static BluetoothLeService mBluetoothLeService;
     private String mDeviceAddress;
     private boolean result;
+
+
+    private BleBroadcastReceiver mBleReceiver = new BleBroadcastReceiver();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +57,39 @@ public class MainActivity extends AppCompatActivity
         initGPS();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+//        registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
+        registerReceiver(mBleReceiver, makeGattUpdateIntentFilter());
+        if (mBluetoothLeService != null)
+        {
+            result = mBluetoothLeService.connect(mDeviceAddress);
+            Log.e("a", "连接请求的结果=" + result);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+//        unregisterReceiver(mGattUpdateReceiver);
+        unregisterReceiver(mBleReceiver);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mBluetoothLeService.close();
+        try
+        {
+            mBleAdapter.stopLeScan(mLeScanCallback);
+            unbindService(mServiceConnection);
+        } catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
+
     /**
      * 按钮点击事件
      */
@@ -61,12 +97,16 @@ public class MainActivity extends AppCompatActivity
         switch (view.getId())
         {
             case R.id.button:                   //开始测量
+                mBluetoothLeService.write(mNotifyCharacteristic, ParserHelper.setBpmWriteData(161, 60));
                 break;
             case R.id.button2:                  //结束测量
+                mBluetoothLeService.write(mNotifyCharacteristic, ParserHelper.setBpmWriteData(162, 63));
                 break;
             case R.id.button3:                  //开启语音
+                mBluetoothLeService.write(mNotifyCharacteristic, ParserHelper.setBpmWriteData(164, 57));
                 break;
             case R.id.button4:                  //关闭语音
+                mBluetoothLeService.write(mNotifyCharacteristic, ParserHelper.setBpmWriteData(163, 62));
                 break;
             case R.id.button5:                  //打开定位设置
                 initGPS();
@@ -90,6 +130,8 @@ public class MainActivity extends AppCompatActivity
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, 0);
         }
+        Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
+        bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
     }
 
     /**
@@ -142,6 +184,7 @@ public class MainActivity extends AppCompatActivity
 
     //搜索时长
     private static final long SCAN_PERIOD = 5000;
+
     /**
      * 搜索设备
      */
@@ -205,11 +248,11 @@ public class MainActivity extends AppCompatActivity
             }
             // Automatically connects to the device upon successful start-up
             // initialization.
-//            mBluetoothLeService.connect(mDeviceAddress);
             result = mBluetoothLeService.connect(mDeviceAddress);
             //开始搜索，搜索到开始连接
             scanLeDevice(true);
         }
+
         //断开连接
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
@@ -221,9 +264,24 @@ public class MainActivity extends AppCompatActivity
      * 链接设备
      */
     private void connectDevice(BluetoothDevice device) {
-        Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
         mDeviceAddress = device.getAddress();
-        bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
+        result = mBluetoothLeService.connect(mDeviceAddress);
+    }
+
+    /**
+     * 注册广播
+     *
+     * @return 意图
+     */
+    private static IntentFilter makeGattUpdateIntentFilter() {
+        final IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED);
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED);
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
+        intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
+        intentFilter.addAction(BluetoothLeService.ACTION_RSSI);
+        intentFilter.addAction(BluetoothLeService.ACTION_DATA_RSSI);
+        return intentFilter;
     }
 
     @Override
@@ -255,8 +313,4 @@ public class MainActivity extends AppCompatActivity
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         MainActivityPermissionsDispatcher.onRequestPermissionsResult(this, requestCode, grantResults);
     }
-
-//    @OnShowRationale({Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION})
-//    void showPermission(final PermissionRequest request) {
-//    }
 }
